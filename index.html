@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accounting Game</title>
+  <style>
+    body {
+      font-family: 'Trebuchet MS', sans-serif;
+      background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .quiz-container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      width: 520px;
+      text-align: center;
+      animation: fadeIn 1s ease;
+    }
+    @keyframes fadeIn {
+      from {opacity:0; transform: scale(0.95);}
+      to {opacity:1; transform: scale(1);}
+    }
+    .quiz-container img {
+      width: 120px;
+      margin-bottom: 15px;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .lives {
+      color: red;
+      font-size: 20px;
+    }
+    .progress-bar {
+      width: 100%;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 15px;
+      height: 18px;
+    }
+    .progress {
+      height: 100%;
+      background: linear-gradient(90deg, #00b09b, #96c93d);
+      width: 0%;
+      transition: width 0.5s;
+    }
+    .timer {
+      font-size: 16px;
+      color: #e74c3c;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .options button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+    .options button:hover {
+      background: #2980b9;
+    }
+    .feedback {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    #nextBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #f39c12;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+    }
+    #nextBtn:hover { background: #e67e22; }
+  </style>
+</head>
+<body>
+  <div class="quiz-container" id="quiz-container">
+    <!-- Logo -->
+    <img src="account.jpg" alt="Accounting Game">
+    <h1>Accounting Game 🎮</h1>
+
+    <!-- Barra de estado -->
+    <div class="status-bar">
+      <div class="lives" id="lives">❤️❤️❤️</div>
+      <div class="timer" id="timer">⏳ 30s</div>
+      <div id="points">Puntos: 0</div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="progress-bar"><div class="progress" id="progress"></div></div>
+
+    <h2 id="question">Pregunta</h2>
+    <div class="options" id="options"></div>
+    <p id="feedback" class="feedback"></p>
+    <button id="nextBtn" onclick="nextQuestion()">Siguiente ➡</button>
+  </div>
+
+  <script>
+    // ================== NIVEL 1: Preguntas narrativas ==================
+    const nivel1 = [
+      {question:"Una empresa compra un computador por $2.000.000 en efectivo. ¿Qué cuenta aumenta?",
+       options:["Caja","Equipos de computación","Ventas","Proveedores"],
+       correct:1, explanation:"Se incrementa un activo fijo: Equipos de computación."},
+      {question:"Una empresa vende hamburguesas por $500.000 en efectivo. ¿Qué cuenta refleja el ingreso?",
+       options:["Ventas","Caja","Cuentas por cobrar","Inventario"],
+       correct:0, explanation:"El ingreso se reconoce en la cuenta Ventas."},
+      {question:"La empresa paga $300.000 de servicios públicos. ¿Cómo se clasifica este gasto?",
+       options:["Pasivo","Activo","Gasto operativo","Ingreso"],
+       correct:2, explanation:"Los servicios públicos son gastos operativos."},
+      {question:"Compra de cemento a crédito por $1.500.000. ¿Qué cuenta aumenta?",
+       options:["Caja","Cuentas por pagar","Ingresos","Inventarios"],
+       correct:1, explanation:"Se incrementa un pasivo: Cuentas por pagar."},
+      {question:"Pago de sueldos $600.000 en efectivo. ¿Qué cuenta se afecta?",
+       options:["Gasto","Activo","Patrimonio","Ingreso"],
+       correct:0, explanation:"Los sueldos se registran como gasto operativo."},
+      {question:"Venta de útiles por $400.000, de los cuales $100.000 quedan fiados. ¿Qué cuenta se genera con la parte fiada?",
+       options:["Cuentas por pagar","Cuentas por cobrar","Caja","Inventario"],
+       correct:1, explanation:"La parte fiada es un activo: Cuentas por cobrar."},
+      {question:"Compra de gasolina $200.000 en efectivo. ¿Cómo se clasifica?",
+       options:["Ingreso","Activo fijo","Gasto","Pasivo"],
+       correct:2, explanation:"La gasolina es un gasto operativo."},
+      {question:"La empresa recibe un préstamo de $5.000.000 en su cuenta bancaria. ¿Qué cuenta aumenta?",
+       options:["Caja","Bancos y pasivo","Ventas","Patrimonio"],
+       correct:1, explanation:"Aumenta Bancos (activo) y también un Pasivo."},
+      {question:"Pago de seguro anual $1.200.000 por anticipado. El seguro corresponde a…",
+       options:["Ingreso","Gasto","Activo diferido","Pasivo"],
+       correct:2, explanation:"Es un activo diferido porque se paga por anticipado."},
+      {question:"Compra de muebles por $3.000.000 a crédito. ¿Cómo se clasifica?",
+       options:["Activo fijo y pasivo","Gasto operativo","Ingreso","Caja y ventas"],
+       correct:0, explanation:"Los muebles son activo fijo, y la deuda es un pasivo."}
+    ];
+
+    // ================== NIVEL 2: Preguntas básicas ==================
+    const nivel2 = [
+      {question:"¿Qué es un activo en contabilidad?",
+        options:["Una obligación presente","Un recurso económico","Una pérdida registrada","Una deuda"],
+        correct:1, explanation:"Un activo es un recurso económico controlado por la empresa."},
+      {question:"¿Cuál es la ecuación contable básica?",
+        options:["Activo = Pasivo - Patrimonio","Activo + Pasivo = Patrimonio","Activo = Pasivo + Patrimonio","Activo - Patrimonio = Pasivo"],
+        correct:2, explanation:"La ecuación básica es Activo = Pasivo + Patrimonio."},
+      {question:"¿Qué representa el pasivo?",
+        options:["Utilidades acumuladas","Deudas y obligaciones","Ingresos del periodo","Bienes tangibles"],
+        correct:1, explanation:"El pasivo refleja deudas y obligaciones de la empresa."},
+      {question:"¿Qué es el patrimonio?",
+        options:["Ingresos acumulados","Capital + utilidades retenidas","Activos intangibles","Deudas financieras"],
+        correct:1, explanation:"El patrimonio es capital aportado y utilidades retenidas."},
+      {question:"Ejemplo de activo corriente:",
+        options:["Edificio","Préstamo largo plazo","Inventarios","Maquinaria"],
+        correct:2, explanation:"Inventarios son activos corrientes porque se convierten en efectivo pronto."},
+      {question:"¿Qué documento registra todas las transacciones?",
+        options:["Estado de resultados","Libro diario","Balance general","Libro mayor"],
+        correct:1, explanation:"El libro diario registra cronológicamente las transacciones."},
+      {question:"¿Qué muestra el estado de resultados?",
+        options:["Ingresos y gastos","Situación financiera","Activos de la empresa","Deudas"],
+        correct:0, explanation:"El estado de resultados muestra ingresos, gastos y utilidades/pérdidas."},
+      {question:"¿Qué es la depreciación?",
+        options:["Disminución de valor por uso/tiempo","Un gasto extraordinario","Un ingreso no operativo","Revalorización de activos"],
+        correct:0, explanation:"La depreciación reduce el valor de un activo sistemáticamente."},
+      {question:"¿Función del balance general?",
+        options:["Mostrar ingresos/egresos","Situación financiera","Registrar operaciones","Calcular impuestos"],
+        correct:1, explanation:"El balance muestra la situación financiera en una fecha específica."},
+      {question:"¿Qué significa saldo acreedor?",
+        options:["Pertenece a activos","Aumenta en el haber","Genera pérdida","Pertenece al patrimonio"],
+        correct:1, explanation:"Las cuentas con saldo acreedor aumentan en el haber."}
+    ];
+
+    let currentLevel = 1;
+    let quizData = nivel1;
+    let currentQuestion = 0;
+    let score = 0;
+    let lives = 3;
+    let timer;
+    let timeLeft = 30;
+    let answered = false;
+
+    function loadQuestion() {
+      if (lives <= 0) {
+        endGame("💀 Te quedaste sin vidas");
+        return;
+      }
+      answered = false;
+      const q = quizData[currentQuestion];
+      document.getElementById("question").textContent = 
+        `Pregunta ${currentQuestion + 1}/${quizData.length}: ${q.question}`;
+      const optionsDiv = document.getElementById("options");
+      optionsDiv.innerHTML = "";
+      document.getElementById("feedback").textContent = "";
+      document.getElementById("nextBtn").style.display = "none";
+
+      document.getElementById("progress").style.width = 
+        ((currentQuestion)/quizData.length)*100 + "%";
+
+      // Tiempo ajustado a 30s
+      timeLeft = 30;
+      document.getElementById("timer").textContent = `⏳ ${timeLeft}s`;
+      clearInterval(timer);
+      timer = setInterval(()=>{
+        timeLeft--;
+        document.getElementById("timer").textContent = `⏳ ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          loseLife("⏰ Tiempo agotado. " + q.explanation);
+        }
+      },1000);
+
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.onclick = () => selectAnswer(i);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(answer) {
+      if (answered) return;
+      answered = true;
+      clearInterval(timer);
+      const q = quizData[currentQuestion];
+      const feedback = document.getElementById("feedback");
+
+      if (answer === q.correct) {
+        score += 10;
+        document.getElementById("points").textContent = "Puntos: " + score;
+        feedback.textContent = "✅ Correcto. " + q.explanation;
+        feedback.className = "feedback correct";
+      } else {
+        loseLife("❌ Incorrecto. " + q.explanation);
+      }
+
+      document.getElementById("nextBtn").style.display = "inline-block";
+    }
+
+    function loseLife(msg) {
+      lives--;
+      document.getElementById("lives").textContent = "❤️".repeat(lives);
+      const feedback = document.getElementById("feedback");
+      feedback.textContent = msg;
+      feedback.className = "feedback incorrect";
+    }
+
+    function nextQuestion() {
+      currentQuestion++;
+      if (currentQuestion < quizData.length) {
+        loadQuestion();
+      } else {
+        if (currentLevel === 1) {
+          // Pasar a nivel 2
+          currentLevel = 2;
+          quizData = nivel2;
+          currentQuestion = 0;
+          document.getElementById("quiz-container").innerHTML = `
+            <img src="account.jpg" alt="Accounting Game">
+            <h2>✅ Nivel 1 superado</h2>
+            <p>Puntaje acumulado: <b>${score}</b></p>
+            <button onclick="startLevel2()">Iniciar Nivel 2 ➡</button>
+          `;
+        } else {
+          endGame("🎉 ¡Examen completo!");
+        }
+      }
+    }
+
+    function startLevel2() {
+      const container = document.getElementById("quiz-container");
+      container.innerHTML = `
+        <img src="account.jpg" alt="Accounting Game">
+        <h1>Accounting Game 🎮</h1>
+        <div class="status-bar">
+          <div class="lives" id="lives">${"❤️".repeat(lives)}</div>
+          <div class="timer" id="timer">⏳ 30s</div>
+          <div id="points">Puntos: ${score}</div>
+        </div>
+        <div class="progress-bar"><div class="progress" id="progress"></div></div>
+        <h2 id="question">Pregunta</h2>
+        <div class="options" id="options"></div>
+        <p id="feedback" class="feedback"></p>
+        <button id="nextBtn" onclick="nextQuestion()">Siguiente ➡</button>
+      `;
+      loadQuestion();
+    }
+function endGame(message) {
+      clearInterval(timer);
+      let nivel = "";
+      if (score <= 60) nivel = "📘 Novato Contable";
+      else if (score <= 140) nivel = "📗 Intermedio Contable";
+      else nivel = "📕 Experto Contable";
+
+      document.getElementById("quiz-container").innerHTML = `
+        <img src="account.jpg" alt="Accounting Game">
+        <h2>${message}</h2>
+        <p>Puntaje final: <b>${score}</b></p>
+        <p>Nivel alcanzado: <b>${nivel}</b></p>
+        <p>Vidas restantes: ${"❤️".repeat(lives)}</p>
+      `;
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
